@@ -1,4 +1,4 @@
-.PHONY: setup run test clean demo
+.PHONY: setup run test clean demo web
 
 setup:
 	python3 -m pip install -r requirements.txt --break-system-packages
@@ -8,6 +8,9 @@ run:
 
 demo:
 	python3 src/demo.py
+
+web:
+	python3 src/server.py
 
 test:
 	python3 -m pytest tests/

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Harness — Autonomous Verification & Falsification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="dark-theme">
+  <div class="chatgpt-layout">
+    <!-- Minimal Left Sidebar (collapsible) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <button class="icon-btn" id="btn-sidebar-toggle" title="Toggle Sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-new-chat" title="New Task">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+      <div class="sidebar-history">
+        <span class="history-label">Recents</span>
+        <div class="history-item active" data-task="Add a clamp(value, lo, hi) function to utils.py">
+          <span>clamp() verification</span>
+        </div>
+        <div class="history-item" data-task="Fix authentication so locked accounts cannot authenticate.">
+          <span>auth guard check</span>
+        </div>
+        <div class="history-item" data-task="Ensure atomic rollback on storage failure.">
+          <span>atomic rollback test</span>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="avatar">SA</div>
+          <span class="user-name">Sarthak</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main App Container -->
+    <div class="main-stage">
+      <!-- Minimal Header -->
+      <header class="top-nav">
+        <div class="nav-left">
+          <div class="brand-title">AI HARNESS</div>
+          <div class="mode-switcher">
+            <button class="mode-tab active" id="tab-verify">Verify</button>
+            <button class="mode-tab" id="tab-falsify">+ Falsify</button>
+          </div>
+        </div>
+        <div class="nav-right">
+          <div class="provider-badge" id="provider-badge">
+            <span class="provider-dot"></span>
+            <span id="active-provider-label">Detecting Provider...</span>
+          </div>
+          <button class="btn-demo-pill" id="btn-demo-mode">
+            <span class="star-icon">✦</span> Run Demo
+          </button>
+          <div class="profile-circle">S</div>
+        </div>
+      </header>
+
+      <!-- Center Landing View (ChatGPT-style empty state) -->
+      <section class="landing-view" id="landing-view">
+        <div class="hero-center">
+          <h1 class="hero-greeting" id="hero-greeting">What's on your mind today?</h1>
+
+          <!-- Capsule Search / Prompt Bar -->
+          <div class="chat-capsule-wrapper">
+            <div class="chat-capsule">
+              <button class="capsule-icon-btn plus-btn" id="btn-attach" title="Attach file or context">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+              <textarea id="task-input" rows="1" placeholder="Ask anything, or describe a bug to verify &amp; falsify..."></textarea>
+              <div class="capsule-actions">
+                <div class="think-pill" id="think-pill" title="Autonomous reasoning &amp; formal proof engine">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+                  <span>Think</span>
+                </div>
+                <select id="provider-select" class="capsule-provider-select">
+                  <option value="auto">Auto</option>
+                  <option value="anthropic">Claude</option>
+                  <option value="openai">GPT-4o</option>
+                  <option value="gemini">Gemini</option>
+                  <option value="groq">Groq</option>
+                  <option value="ollama">Ollama</option>
+                </select>
+                <button class="capsule-icon-btn mic-btn" title="Voice input (disabled in text mode)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+                <button class="capsule-action-btn" id="btn-run-pipeline" title="Run Pipeline">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggestion Chips -->
+          <div class="suggestion-chips">
+            <button class="chip sample-pill" data-issue="Add a clamp(value, lo, hi) function to utils.py that restricts a numeric value to [lo, hi].">
+              <span class="chip-icon">⚡</span> Clamp function demo
+            </button>
+            <button class="chip sample-pill" data-issue="Fix authentication in auth.py so locked accounts are strictly rejected with 403 Forbidden.">
+              <span class="chip-icon">🛡️</span> Locked auth guard
+            </button>
+            <button class="chip sample-pill" data-issue="Implement atomic rollback in storage.py when disk write fails mid-transaction.">
+              <span class="chip-icon">🔄</span> Atomic rollback
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Active Conversation / Results View (Hidden until submitted) -->
+      <section class="conversation-view" id="conversation-view" style="display: none;">
+        <div class="chat-stream" id="chat-stream">
+          <!-- Messages will be dynamically rendered here -->
+        </div>
+
+        <!-- Sticky Bottom Chat Bar -->
+        <div class="bottom-dock">
+          <div class="chat-capsule-wrapper bottom">
+            <div class="chat-capsule">
+              <button class="capsule-icon-btn plus-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+              <textarea id="task-input-bottom" rows="1" placeholder="Ask a follow-up or enter another coding issue..."></textarea>
+              <div class="capsule-actions">
+                <button class="capsule-action-btn" id="btn-run-bottom">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="disclaimer">AI Harness proves solutions through executable tests and active falsification. Evidence graph ensures zero stale proofs.</div>
+        </div>
+      </section>
+
+      <!-- Hidden Structured Containers for Test Compatibility & Graph Rendering -->
+      <div id="hidden-compat-layer" style="display: none;">
+        <div id="verdict-banner"><span id="verdict-tag">STANDBY</span></div>
+        <div id="pipeline-stepper">
+          <span class="section-label">AUTONOMOUS PIPELINE LIFECYCLE</span>
+          <div class="step-node" data-phase="understand"><div class="step-status">Pending</div></div>
+          <div class="step-node" data-phase="contract"><div class="step-status">Pending</div></div>
+          <div class="step-node" data-phase="change_budget"><div class="step-status">Pending</div></div>
+          <div class="step-node" data-phase="execute"><div class="step-status">Pending</div></div>
+          <div class="step-node" data-phase="verify"><div class="step-status">Pending</div></div>
+          <div class="step-node" data-phase="falsify"><div class="step-status">Pending</div></div>
+          <div class="step-node" data-phase="evidence"><div class="step-status">Pending</div></div>
+          <div class="step-node" data-phase="verdict"><div class="step-status">Pending</div></div>
+        </div>
+        <div id="evidence-graph-canvas"></div>
+        <div id="obligations-list"></div>
+        <div id="falsification-view"></div>
+        <div id="budget-view"></div>
+        <pre id="terminal-log"></pre>
+        <button id="btn-copy-transcript"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

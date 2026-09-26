@@ -124,44 +124,70 @@ falsification:
   command_timeout: 30
 ```
 
-### API Key
+### API Configuration (Multi-Provider Support)
 
-The harness requires an `AI_API_KEY` environment variable.  This is the
-API key for the Anthropic Claude model.
+The harness supports multiple LLM providers with automatic detection based on active environment variables or configuration:
+
+| Provider | Environment Variable | Default Model | Notes |
+|:---|:---|:---|:---|
+| **Anthropic (Claude)** | `AI_API_KEY` or `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` | Official SDK |
+| **OpenAI** | `OPENAI_API_KEY` | `gpt-4o` | Supports GPT-4o, o3-mini, o1 |
+| **Google Gemini** | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-2.0-flash` | Gemini OpenAI-compatible API |
+| **Groq** | `GROQ_API_KEY` | `llama-3.3-70b-versatile` | Ultra-fast Llama inference |
+| **Ollama** | `OLLAMA_BASE_URL` | `llama3` | Fully local, no API key needed |
 
 ```bash
-export AI_API_KEY='your-key-here'
+# Example: Using Anthropic Claude
+export AI_API_KEY='your-anthropic-key-here'
+
+# Or using OpenAI
+export OPENAI_API_KEY='your-openai-key-here'
+
+# Or using Google Gemini
+export GEMINI_API_KEY='your-gemini-key-here'
+
+# Or using Groq
+export GROQ_API_KEY='your-groq-key-here'
+
+# Or using Ollama locally
+export OLLAMA_BASE_URL='http://localhost:11434/v1'
 ```
 
-**Never commit an API key to the repository.**  The `.env` file is
-listed in `.gitignore`.  The harness actively redacts any API key that
-appears in error messages.
+**Never commit an API key to the repository.** The `.env` file is listed in `.gitignore`. The harness actively redacts any API keys and secrets across all providers if they appear in error messages.
 
 ## 7. Running
 
 ```bash
-export AI_API_KEY='your-key-here'
+export AI_API_KEY='your-key-here'  # or OPENAI_API_KEY, GEMINI_API_KEY, etc.
 make run
 ```
 
-The harness presents an interactive terminal where you can enter a
-coding issue in natural language and watch the full pipeline execute.
+The harness presents an interactive terminal where you can enter a coding issue in natural language and watch the full pipeline execute.
 
-If `AI_API_KEY` is not set, the harness prints a clear error and exits
-with code 1.
+If no supported API key (or Ollama endpoint) is configured, the harness prints a clear error with setup instructions and exits with code 1.
 
-### Demo Mode
+### Minimalist Web Dashboard UI
+
+```bash
+make web
+```
+
+Launches the sleek, minimalist dark-mode browser dashboard at `http://127.0.0.1:8080/`.
+
+Features:
+- **Interactive Issue Input**: Enter any bug description or select preset benchmarks.
+- **8-Stage Pipeline Lifecycle**: Real-time visual stepper tracking Understand, Contract, Change Budget, Patch, Verify (L1–L5), Falsify (L6), Evidence Freshness, and Final Verdict.
+- **Interactive Evidence Graph**: Direct DAG linking Requirements → Proof Obligations → Code Locations → Changes → Verifications → Falsifications → Verdict.
+- **Falsification Explorer**: Visual breakdown of adversarial counterexamples, inverted boundary conditions, and automatic repair diffs.
+- **Change Budget & Blast Radius**: Audit of expected vs actual file modifications.
+- **Multi-LLM Provider Switcher**: One-click switching between Claude, GPT-4o, Gemini, Groq, and Ollama.
+### CLI Demo Mode
 
 ```bash
 make demo
 ```
 
-Runs a **deterministic 60-second demonstration** that executes a
-complete pipeline against a real temporary repository — no API key
-required.  The demo shows contract compilation, verification,
-active falsification discovering a hidden counterexample, repair,
-re-verification, and final `VERIFIED` status.  All test results are
-produced by real `pytest` execution.
+Runs the deterministic hackathon demonstration directly in your terminal, showing contract compilation, active falsification discovering a boundary counterexample, repair, and evidence generation.
 
 ## 8. Testing
 
@@ -169,7 +195,7 @@ produced by real `pytest` execution.
 make test
 ```
 
-Runs the full test suite (734 tests) with `pytest`.  All tests are
+Runs the full test suite (761 tests) with `pytest`.  All tests are
 offline — no API key or network access is required for testing.
 
 ## 9. Cleaning
@@ -289,8 +315,8 @@ export AI_API_KEY='your-key-here'
 make run
 ```
 
-All 734 tests pass offline with no API key required.  The `make run`
-command requires a valid `AI_API_KEY` to communicate with the Claude API.
+All 753 tests pass offline with no API key required. The `make run`
+command requires a supported LLM API key (Anthropic, OpenAI, Gemini, Groq) or local Ollama.
 
 ## Project Structure
 
@@ -301,8 +327,10 @@ command requires a valid `AI_API_KEY` to communicate with the Claude API.
 ├── .env.example            # Template for environment variables
 ├── src/
 │   ├── main.py             # Entry point and terminal UI
+│   ├── server.py           # Web Dashboard HTTP server
+│   ├── web/                # Minimalist Web Dashboard SPA (HTML/CSS/JS)
 │   ├── demo.py             # Deterministic hackathon demo (no API key)
-│   ├── model_client.py     # LLM API client (Anthropic / Claude)
+│   ├── model_client.py     # Multi-provider LLM client (Claude, GPT, Gemini, Groq, Ollama)
 │   ├── orchestrator.py     # Central autonomous pipeline loop
 │   ├── contract_engine.py  # Issue → TaskContract compiler
 │   ├── verifier.py         # Multi-level verification (6 layers)

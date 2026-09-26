@@ -50,6 +50,8 @@ def _bar(w: int = 62) -> str:
 
 def _pause(seconds: float = 0.4) -> None:
     """Dramatic pause for live presentation."""
+    if os.environ.get("FAST_DEMO"):
+        return
     time.sleep(seconds)
 
 

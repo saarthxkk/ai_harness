@@ -36,6 +36,9 @@ import yaml
 _CONFIG_PATH = pathlib.Path(__file__).resolve().parent.parent / "config.yaml"
 _REPO_ROOT = str(pathlib.Path(__file__).resolve().parent.parent)
 
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 
 def _load_config() -> dict[str, Any]:
     try:
@@ -451,21 +454,11 @@ def run_interactive(tui: TUI) -> int:
 # Vercel handler (preserved for deployment)
 # ---------------------------------------------------------------------------
 
-class handler:
-    """Vercel Serverless Function HTTP handler (preserved)."""
+from src.server import HarnessRequestHandler
 
-    @staticmethod
-    def do_GET(self):
-        from http.server import BaseHTTPRequestHandler
-        api_key = os.environ.get("AI_API_KEY")
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        body = {
-            "status": "Harness ready",
-            "api_key_configured": bool(api_key),
-        }
-        self.wfile.write(json.dumps(body).encode("utf-8"))
+class handler(HarnessRequestHandler):
+    """Vercel Serverless Function HTTP handler."""
+    pass
 
 
 # ---------------------------------------------------------------------------
@@ -485,13 +478,20 @@ def main() -> None:
     *  Tool errors
     *  Never prints API keys or environment secrets
     """
-    # -- API key check (always required) -----------------------------------
-    api_key = os.environ.get("AI_API_KEY")
+    # -- API key check (Anthropic, OpenAI, Gemini, Groq, or Ollama) -------
+    from src.model_client import detect_provider, get_configured_providers
+    configured = get_configured_providers()
+    provider, model_name, key_or_endpoint = detect_provider()
 
-    if not api_key:
+    if not configured and not (provider == "ollama" and key_or_endpoint):
         print(
             "ERROR: AI_API_KEY environment variable is not set.\n"
-            "Export it before running:  export AI_API_KEY='your-key-here'",
+            "Export a supported API key before running:\n"
+            "  Anthropic: export AI_API_KEY='your-key-here'\n"
+            "  OpenAI:    export OPENAI_API_KEY='your-key-here'\n"
+            "  Gemini:    export GEMINI_API_KEY='your-key-here'\n"
+            "  Groq:      export GROQ_API_KEY='your-key-here'\n"
+            "  Ollama:    export OLLAMA_BASE_URL='http://localhost:11434/v1'",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -526,9 +526,14 @@ def main() -> None:
     except Exception as exc:
         # Catch-all: never expose internal stack traces with secrets.
         error_msg = str(exc)
-        # Redact any API key that might leak.
-        if api_key and api_key in error_msg:
-            error_msg = error_msg.replace(api_key, "[REDACTED]")
+        # Redact any API key or secret that might leak.
+        for secret_name in (
+            "AI_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY",
+            "GEMINI_API_KEY", "GOOGLE_API_KEY", "GROQ_API_KEY",
+        ):
+            secret_val = os.environ.get(secret_name)
+            if secret_val and secret_val in error_msg:
+                error_msg = error_msg.replace(secret_val, "[REDACTED]")
         print(f"\n  Error: {error_msg}", file=sys.stderr)
         exit_code = 1
 

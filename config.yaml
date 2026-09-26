@@ -1,7 +1,15 @@
 # AI Coding-Agent Harness Configuration
 
 model:
+  # Provider: "auto" (detects from active key/model), "anthropic", "openai", "gemini", "groq", or "ollama"
+  provider: "auto"
   name: "claude-sonnet-4-20250514"
+  # Examples:
+  #   Anthropic: "claude-sonnet-4-20250514", "claude-3-7-sonnet-20250219"
+  #   OpenAI:    "gpt-4o", "gpt-4o-mini", "o3-mini", "o1"
+  #   Gemini:    "gemini-2.0-flash", "gemini-1.5-pro"
+  #   Groq:      "llama-3.3-70b-versatile"
+  #   Ollama:    "llama3", "deepseek-coder-v2"
 
 runtime:
   max_iterations: 10
