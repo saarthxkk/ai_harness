@@ -745,6 +745,7 @@ class Orchestrator:
 
         # ── EXECUTE / VERIFY / REPAIR LOOP ──────────────────────────
         prev_file_hashes: dict[str, str] = {}
+        actual_changes_applied = False  # Track if real changes were made
 
         for attempt_num in range(self.max_iterations):
             start_time = time.time()
@@ -769,6 +770,8 @@ class Orchestrator:
                     changed_files = self._patch_fn(
                         task, contract, expected_files, repair_prompt,
                     )
+                    if changed_files:
+                        actual_changes_applied = True
                 except Exception:
                     changed_files = []
 
@@ -840,6 +843,48 @@ class Orchestrator:
 
             # -- Check for success --
             if verification and verification.passed:
+                # -- SAFETY CHECK: Reject VERIFIED if no actual changes
+                #    were applied.  Pre-existing tests passing is NOT
+                #    evidence that the task was completed.
+                if not actual_changes_applied:
+                    log.append(PhaseLog(
+                        Phase.PROOF,
+                        "Verification passed but NO actual changes were applied — "
+                        "returning UNKNOWN (prefer UNKNOWN over unjustified VERIFIED)",
+                    ))
+                    attempt = AttemptRecord(
+                        attempt_number=attempt_num,
+                        files_changed=changed_files,
+                        verification_result=verification,
+                        failed_obligations=[],
+                        failure_type=None,
+                        relevant_command=verification.command,
+                        counterexamples=[],
+                        repair_action=None,
+                        progress=ProgressStatus.NO_PROGRESS,
+                        repeated_failure=False,
+                        duration=round(time.time() - start_time, 3),
+                    )
+                    history.record(attempt)
+                    metrics.execution_duration = round(time.time() - run_start, 3)
+
+                    return TaskResult(
+                        task_id=task_id,
+                        outcome=TaskOutcome.UNKNOWN,
+                        contract=contract,
+                        history=history,
+                        final_verification=verification,
+                        evidence_report=None,
+                        rollback_result=None,
+                        phase_log=log,
+                        reason=(
+                            "No changes were applied to the repository. "
+                            "Pre-existing test passes do not constitute "
+                            "verification of new work."
+                        ),
+                        metrics=metrics,
+                    )
+
                 # -- FALSIFY (post-verification) --
                 log.append(PhaseLog(
                     Phase.FALSIFY,

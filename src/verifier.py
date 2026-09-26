@@ -435,6 +435,28 @@ def _run_existing_tests(
             duration=result.duration,
         )]
 
+    # Exit code 5 = no tests collected (e.g. empty test dir, no test files).
+    # This is NOT a test failure — it means the project has no test suite.
+    # Return SKIP so the verdict falls through to higher levels or UNKNOWN,
+    # rather than falsely reporting FAILED.
+    if result.exit_code == 5:
+        return [VerificationCheck(
+            check_id="L2-SUITE",
+            level=VerificationLevel.EXISTING_TESTS,
+            description="Run existing test suite",
+            status=CheckStatus.SKIP,
+            evidence=(
+                f"No tests collected (exit code 5).  "
+                f"The project may not have an existing test suite.\n"
+                f"{result.stdout[:300]}"
+            ),
+            command=test_command,
+            stdout=result.stdout,
+            stderr=result.stderr,
+            exit_code=result.exit_code,
+            duration=result.duration,
+        )]
+
     return [VerificationCheck(
         check_id="L2-SUITE",
         level=VerificationLevel.EXISTING_TESTS,

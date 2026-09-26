@@ -451,7 +451,20 @@ class ContractEngine:
         if not issue or not issue.strip():
             raise ContractValidationError("Issue text must not be empty.")
 
-        messages = _build_messages(issue.strip())
+        clean_issue = issue.strip()
+
+        # Guard against extremely long issue text that could blow up
+        # API costs or exceed context limits.
+        MAX_ISSUE_CHARS = 50_000
+        if len(clean_issue) > MAX_ISSUE_CHARS:
+            clean_issue = (
+                clean_issue[:MAX_ISSUE_CHARS]
+                + "\n\n[… truncated — original issue was "
+                + f"{len(issue.strip()):,} chars, limit is "
+                + f"{MAX_ISSUE_CHARS:,} …]"
+            )
+
+        messages = _build_messages(clean_issue)
         response = self._model_call(
             [{"role": "user", "content": _SYSTEM_PROMPT}] + messages,
         )

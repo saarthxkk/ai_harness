@@ -1478,7 +1478,12 @@ class TestOrchestratorWithContract:
         assert call_kwargs.kwargs.get("contract") is contract
 
     def test_expected_files_from_contract(self):
-        """changed_files defaults to contract.expected_files when patch_fn is absent."""
+        """changed_files defaults to contract.expected_files when patch_fn is absent.
+
+        With no patch_fn, no actual changes are applied.  The harness must
+        return UNKNOWN (prefer UNKNOWN over unjustified VERIFIED) because
+        pre-existing test passes are not evidence of new work.
+        """
         contract = _make_contract()
         vr = _make_verification_result(passed=True)
         verifier = MagicMock(spec=Verifier)
@@ -1490,7 +1495,9 @@ class TestOrchestratorWithContract:
         )
         result = orch.run("Fix bug", contract=contract)
 
-        assert result.outcome == TaskOutcome.VERIFIED
-        # Verifier should have been called with expected_files.
+        # No patch_fn → no actual changes → UNKNOWN, not VERIFIED.
+        assert result.outcome == TaskOutcome.UNKNOWN
+        assert "No changes were applied" in result.reason
+        # Verifier should still have been called with expected_files.
         call_args = verifier.verify.call_args
         assert "src/foo.py" in call_args.kwargs.get("changed_files", [])

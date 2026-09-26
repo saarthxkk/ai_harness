@@ -72,6 +72,16 @@ _DESTRUCTIVE_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"\bcurl\b.*\|\s*(ba)?sh", re.IGNORECASE),
     re.compile(r"\bwget\b.*\|\s*(ba)?sh", re.IGNORECASE),
     re.compile(r"\brm\s+(-[a-zA-Z]*\s+)*-[a-zA-Z]*r[a-zA-Z]*\s+\.\.", re.IGNORECASE),
+    # Additional bypass-prevention patterns:
+    re.compile(r"\bfind\b.*\s-delete\b", re.IGNORECASE),
+    re.compile(r"\bfind\b.*-exec\s+rm\b", re.IGNORECASE),
+    re.compile(r"\bxargs\s+rm\b", re.IGNORECASE),
+    re.compile(r"\bpython[23]?\s+.*\bshutil\.rmtree\b", re.IGNORECASE),
+    re.compile(r"\bperl\b.*\bunlink\b", re.IGNORECASE),
+    re.compile(r"\btruncate\s+.*-s\s*0\b", re.IGNORECASE),
+    re.compile(r"\bshred\b", re.IGNORECASE),
+    re.compile(r"\b>\s*/etc/", re.IGNORECASE),
+    re.compile(r"\bsudo\b", re.IGNORECASE),
 ]
 
 # Commands that leak environment variables / secrets.
