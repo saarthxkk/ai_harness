@@ -1,7 +1,22 @@
-"""AI Coding-Agent Harness — Entry Point."""
-
+from http.server import BaseHTTPRequestHandler
+import json
 import os
 import sys
+
+
+class handler(BaseHTTPRequestHandler):
+    """Vercel Serverless Function HTTP handler."""
+
+    def do_GET(self):
+        api_key = os.environ.get("AI_API_KEY")
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        body = {
+            "status": "Harness ready",
+            "api_key_configured": bool(api_key),
+        }
+        self.wfile.write(json.dumps(body).encode("utf-8"))
 
 
 def main() -> None:
