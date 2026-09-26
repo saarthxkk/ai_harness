@@ -6,3 +6,9 @@ model:
 runtime:
   max_iterations: 10
   max_tokens: 4096
+
+falsification:
+  max_falsification_cases: 50
+  max_falsification_time: 300
+  max_attempts_per_obligation: 10
+  command_timeout: 30
