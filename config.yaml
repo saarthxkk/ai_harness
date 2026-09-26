@@ -1,0 +1,8 @@
+# AI Coding-Agent Harness Configuration
+
+model:
+  name: "claude-sonnet-4-20250514"
+
+runtime:
+  max_iterations: 10
+  max_tokens: 4096
