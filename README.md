@@ -150,6 +150,19 @@ coding issue in natural language and watch the full pipeline execute.
 If `AI_API_KEY` is not set, the harness prints a clear error and exits
 with code 1.
 
+### Demo Mode
+
+```bash
+make demo
+```
+
+Runs a **deterministic 60-second demonstration** that executes a
+complete pipeline against a real temporary repository — no API key
+required.  The demo shows contract compilation, verification,
+active falsification discovering a hidden counterexample, repair,
+re-verification, and final `VERIFIED` status.  All test results are
+produced by real `pytest` execution.
+
 ## 8. Testing
 
 ```bash
@@ -169,47 +182,51 @@ Removes `__pycache__/` and `.pytest_cache/` directories.
 
 ## 10. Example
 
-Given the issue:
-
-> *"Add a `clamp(value, lo, hi)` function to `utils.py` that restricts
-> a numeric value to the range `[lo, hi]`."*
-
-The harness produces:
+Run `make demo` to watch the full pipeline live.  Here is the key
+sequence it demonstrates:
 
 ```
-CONTRACT
-  ✓ Task goal: Add clamp(value, lo, hi) function to utils.py
-  ✓ OB-1: clamp returns lo when value < lo              [PENDING]
-  ✓ OB-2: clamp returns hi when value > hi              [PENDING]
-  ✓ OB-3: clamp returns value when lo <= value <= hi    [PENDING]
-  ✓ OB-4: No regression in existing utils.py functions  [PENDING]
-  ✓ OB-5: Only utils.py and its tests are modified      [PENDING]
+ISSUE
+  "Add a clamp(value, lo, hi) function to utils.py"
 
-CHANGE BUDGET
-  Expected: 2 files (utils.py, tests/test_utils.py)
-  Actual:   2 files
-  Status:   WITHIN_SCOPE
+CONTRACT
+  → OB-1: Returns lo when value < lo                       [PENDING]
+  → OB-2: Returns hi when value > hi                       [PENDING]
+  → OB-3: Returns value when lo ≤ value ≤ hi               [PENDING]
+  → OB-4: Postcondition: lo ≤ result ≤ hi always holds     [PENDING]
+  → OB-5: No regression in existing utils functions        [PENDING]
 
 VERIFICATION
-  ✓ Basic validation
-  ✓ Existing tests
-  ✓ Targeted tests
-  ✓ Contract checks
-  ✓ Regression
+  ✓ Syntax         PASS
+  ✓ Existing tests  PASS  (5 passed)
+  ✓ New tests       PASS  (6 passed)
+  ✓ Regression      PASS
 
-FALSIFICATION
-  ⚡ Testing boundary cases...
-  ⚡ Testing invalid states...
-  ✓ No counterexample found
+  ┌──────────────────────────────────────────────────┐
+  │  All tests pass.                                 │
+  │  A standard CI pipeline would stop here.         │
+  │  Our harness does not.                           │
+  └──────────────────────────────────────────────────┘
+
+ACTIVE FALSIFICATION
+  ⚡ Testing postcondition: lo ≤ result ≤ hi
+  ⚡ Testing: clamp(5, 10, 0)  ← lo > hi
+
+  ✗ COUNTEREXAMPLE FOUND
+    Input:    clamp(5, 10, 0)
+    Expected: ValueError
+    Got:      returned 10
+    Violated: OB-4
 
 REPAIR
-  (none required)
+  → Fix: add input validation (lo > hi → ValueError)
 
-EVIDENCE
-  ✓ Fresh
+RE-VERIFICATION     ✓ PASS
+RE-FALSIFICATION    ✓ No counterexample found
+EVIDENCE            ✓ Fresh
 
 FINAL STATUS: VERIFIED
-  All obligations verified by executed evidence
+  All obligations verified by executed evidence.
 ```
 
 ## 11. Security
@@ -259,6 +276,12 @@ make setup
 make test
 ```
 
+To see a deterministic end-to-end demonstration (no API key needed):
+
+```bash
+make demo
+```
+
 To run the interactive harness:
 
 ```bash
@@ -278,6 +301,7 @@ command requires a valid `AI_API_KEY` to communicate with the Claude API.
 ├── .env.example            # Template for environment variables
 ├── src/
 │   ├── main.py             # Entry point and terminal UI
+│   ├── demo.py             # Deterministic hackathon demo (no API key)
 │   ├── model_client.py     # LLM API client (Anthropic / Claude)
 │   ├── orchestrator.py     # Central autonomous pipeline loop
 │   ├── contract_engine.py  # Issue → TaskContract compiler

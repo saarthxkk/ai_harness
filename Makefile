@@ -1,10 +1,13 @@
-.PHONY: setup run test clean
+.PHONY: setup run test clean demo
 
 setup:
 	python3 -m pip install -r requirements.txt --break-system-packages
 
 run:
 	AI_API_KEY=$(AI_API_KEY) python3 src/main.py
+
+demo:
+	python3 src/demo.py
 
 test:
 	python3 -m pytest tests/
